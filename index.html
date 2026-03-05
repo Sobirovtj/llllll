@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Barodar Cargo Calc</title>
+  <!-- Пайваст кардани китобхона барои Excel -->
+  <script src="https://cdnjs.cloudflare.com"></script>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -32,7 +34,6 @@
       color: #d93025;
     }
 
-    /* Танзимоти нархҳо */
     .price-settings {
       display: flex;
       justify-content: center;
@@ -41,6 +42,7 @@
       padding: 10px;
       background: #eef2f7;
       border-radius: 8px;
+      flex-wrap: wrap;
     }
 
     .price-settings label {
@@ -60,7 +62,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 1100px;
+      min-width: 1200px;
     }
 
     th,
@@ -74,6 +76,9 @@
     th {
       background-color: #f8f9fa;
       font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
     .yellow-bg {
@@ -105,10 +110,11 @@
       justify-content: center;
       gap: 10px;
       margin: 20px 0;
+      flex-wrap: wrap;
     }
 
     .btn {
-      padding: 12px 25px;
+      padding: 12px 20px;
       border: none;
       border-radius: 8px;
       cursor: pointer;
@@ -121,21 +127,20 @@
       background-color: #28a745;
     }
 
-    .btn-save {
+    .btn-save-txt {
       background-color: #007bff;
     }
 
+    .btn-save-excel {
+      background-color: #1d6f42;
+    }
+
+    /* Ранги Excel */
     @media (max-width: 600px) {
       .price-settings {
         flex-direction: column;
         align-items: center;
-        gap: 5px;
-      }
-
-      th,
-      td {
-        padding: 4px;
-        font-size: 11px;
+        gap: 10px;
       }
     }
   </style>
@@ -145,15 +150,25 @@
 
   <h2>BARODAR <span class="cargo-red">CARGO</span></h2>
 
+  <datalist id="tajik-names">
+    <option value="Абдулло">
+    <option value="Алишер">
+    <option value="Дилшод">
+    <option value="Мадина">
+    <option value="Рустам">
+  </datalist>
+
+  <datalist id="tajik-districts">
+    <option value="Душанбе">
+    <option value="Хуҷанд">
+    <option value="Бохтар">
+    <option value="Кӯлоб">
+    <option value="Данғара">
+  </datalist>
+
   <div class="price-settings">
-    <div>
-      <label>Нархи 1 КГ ($ ё смн): </label>
-      <input type="number" id="p-kg" value="25" oninput="calc()">
-    </div>
-    <div>
-      <label>Нархи 1 КУБ ($ ё смн): </label>
-      <input type="number" id="p-cub" value="450" oninput="calc()">
-    </div>
+    <div><label>Нархи 1 КГ: </label><input type="number" id="p-kg" value="25" oninput="calc()"></div>
+    <div><label>Нархи 1 КУБ: </label><input type="number" id="p-cub" value="450" oninput="calc()"></div>
   </div>
 
   <div class="container">
@@ -161,6 +176,7 @@
       <thead>
         <tr>
           <th rowspan="3">№</th>
+          <th rowspan="3">Сана</th>
           <th rowspan="3">АДРЕС</th>
           <th rowspan="3">Ном</th>
           <th rowspan="3">Тел</th>
@@ -171,13 +187,13 @@
           <th rowspan="3" class="yellow-bg">Ҳамагӣ маблағ</th>
         </tr>
         <tr>
-          <th rowspan="2">Шумораи бор</th>
+          <th rowspan="2">шум</th>
           <th rowspan="2">кг</th>
-          <th>Дарози</th>
+          <th>Дар.</th>
           <th>Бар</th>
-          <th>Баланди</th>
-          <th rowspan="2">Ҳамагӣ Куб</th>
-          <th rowspan="2">Ҳосили кг</th>
+          <th>Бал.</th>
+          <th rowspan="2">Куб</th>
+          <th rowspan="2">кг Сум</th>
         </tr>
         <tr>
           <th>(м)</th>
@@ -188,7 +204,7 @@
       <tbody id="tableBody"></tbody>
       <tfoot>
         <tr style="background:#e9ecef; font-weight:bold;">
-          <td colspan="4" style="text-align:right">ҶАМЪБАСТ:</td>
+          <td colspan="5" style="text-align:right">ҶАМЪБАСТ:</td>
           <td id="t-count">0</td>
           <td id="t-kg">0</td>
           <td colspan="3">---</td>
@@ -199,23 +215,26 @@
         </tr>
       </tfoot>
     </table>
+  </div>
 
-    <div class="btn-group">
-      <button class="btn btn-add" onclick="addRow()">+ Иловаи сатр</button>
-      <button class="btn btn-save" onclick="saveToFile()">💾 Захира кардан (.txt)</button>
-    </div>
+  <div class="btn-group">
+    <button class="btn btn-add" onclick="addRow()">+ Иловаи сатр</button>
+    <button class="btn btn-save-txt" onclick="saveToFile()">💾 Захира (.txt)</button>
+    <button class="btn btn-save-excel" onclick="saveToExcel()">📊 Захира (.excel)</button>
   </div>
 
   <script>
     let rowCount = 0;
+    const today = new Date().toISOString().split('T')[0];
 
     function addRow() {
       rowCount++;
       const row = document.createElement('tr');
       row.innerHTML = `
                 <td>${rowCount}</td>
-                <td><input type="text" class="v-addr" placeholder="Адрес"></td>
-                <td><input type="text" class="v-name" placeholder="Ном"></td>
+                <td><input type="date" class="v-date" value="${today}"></td>
+                <td><input type="text" class="v-addr" list="tajik-districts" placeholder="Адрес"></td>
+                <td><input type="text" class="v-name" list="tajik-names" placeholder="Ном"></td>
                 <td><input type="text" class="v-tel" placeholder="Тел"></td>
                 <td><input type="number" class="v-cnt" value="0" oninput="calc()"></td>
                 <td><input type="number" class="v-kg" value="0" oninput="calc()"></td>
@@ -231,62 +250,87 @@
     }
 
     function calc() {
-      const priceKg = parseFloat(document.getElementById('p-kg').value) || 0;
-      const priceCub = parseFloat(document.getElementById('p-cub').value) || 0;
-
-      let tcnt = 0, tkg = 0, tcub = 0, tkgm = 0, tcubm = 0, tall = 0;
-      const rows = document.querySelectorAll('#tableBody tr');
-
-      rows.forEach(r => {
-        const cnt = +r.querySelector('.v-cnt').value || 0;
-        const kg = +r.querySelector('.v-kg').value || 0;
-        const d = +r.querySelector('.v-d').value || 0;
-        const b = +r.querySelector('.v-b').value || 0;
-        const h = +r.querySelector('.v-h').value || 0;
-
-        const cub = d * b * h;
-        const kgS = kg * priceKg;
-        const cubS = cub * priceCub;
-        const total = kgS + cubS;
-
+      const pKg = parseFloat(document.getElementById('p-kg').value) || 0;
+      const pCub = parseFloat(document.getElementById('p-cub').value) || 0;
+      let tc = 0, tk = 0, tcu = 0, tkm = 0, tcm = 0, ta = 0;
+      document.querySelectorAll('#tableBody tr').forEach(r => {
+        const k = +r.querySelector('.v-kg').value || 0, c = +r.querySelector('.v-cnt').value || 0;
+        const d = +r.querySelector('.v-d').value || 0, b = +r.querySelector('.v-b').value || 0, h = +r.querySelector('.v-h').value || 0;
+        const cub = d * b * h, kS = k * pKg, cS = cub * pCub, tot = kS + cS;
         r.querySelector('.r-cub').innerText = cub.toFixed(3);
-        r.querySelector('.r-kg-s').innerText = kgS.toFixed(1);
-        r.querySelector('.r-cub-s').innerText = cubS.toFixed(1);
-        r.querySelector('.r-total').innerText = total.toFixed(1);
+        r.querySelector('.r-kg-s').innerText = kS.toFixed(1);
+        r.querySelector('.r-cub-s').innerText = cS.toFixed(1);
+        r.querySelector('.r-total').innerText = tot.toFixed(1);
+        tc += c; tk += k; tcu += cub; tkm += kS; tcm += cS; ta += tot;
+      });
+      document.getElementById('t-count').innerText = tc;
+      document.getElementById('t-kg').innerText = tk.toFixed(1);
+      document.getElementById('t-cub').innerText = tcu.toFixed(3);
+      document.getElementById('t-kg-money').innerText = tkm.toFixed(1);
+      document.getElementById('t-cub-money').innerText = tcm.toFixed(1);
+      document.getElementById('t-total').innerText = ta.toFixed(1);
+    }
 
-        tcnt += cnt; tkg += kg; tcub += cub; tkgm += kgS; tcubm += cubS; tall += total;
+    function saveToExcel() {
+      // Интихоби ҷадвал
+      const table = document.getElementById("cargoTable");
+
+      // Сохтани нусхаи ҷадвал барои Excel (бе input-ҳо)
+      const wb = XLSX.utils.book_new();
+      const ws_data = [];
+
+      // Сарлавҳаҳо (Headers)
+      ws_data.push(["№", "Сана", "Адрес", "Ном", "Тел", "Шум", "Кг", "Д", "Б", "В", "Куб", "Кг Сум", "Куб Сум", "Ҳамагӣ"]);
+
+      // Маълумоти сатрҳо
+      document.querySelectorAll('#tableBody tr').forEach(r => {
+        const row = [
+          r.cells[0].innerText,
+          r.querySelector('.v-date').value,
+          r.querySelector('.v-addr').value,
+          r.querySelector('.v-name').value,
+          r.querySelector('.v-tel').value,
+          r.querySelector('.v-cnt').value,
+          r.querySelector('.v-kg').value,
+          r.querySelector('.v-d').value,
+          r.querySelector('.v-b').value,
+          r.querySelector('.v-h').value,
+          r.querySelector('.r-cub').innerText,
+          r.querySelector('.r-kg-s').innerText,
+          r.querySelector('.r-cub-s').innerText,
+          r.querySelector('.r-total').innerText
+        ];
+        ws_data.push(row);
       });
 
-      document.getElementById('t-count').innerText = tcnt;
-      document.getElementById('t-kg').innerText = tkg.toFixed(1);
-      document.getElementById('t-cub').innerText = tcub.toFixed(3);
-      document.getElementById('t-kg-money').innerText = tkgm.toFixed(1);
-      document.getElementById('t-cub-money').innerText = tcubm.toFixed(1);
-      document.getElementById('t-total').innerText = tall.toFixed(1);
+      // Илова кардани ҶАМЪБАСТ
+      ws_data.push([]);
+      ws_data.push(["", "", "", "", "ҶАМЪБАСТ:",
+        document.getElementById('t-count').innerText,
+        document.getElementById('t-kg').innerText,
+        "", "", "",
+        document.getElementById('t-cub').innerText,
+        document.getElementById('t-kg-money').innerText,
+        document.getElementById('t-cub-money').innerText,
+        document.getElementById('t-total').innerText
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet(ws_data);
+      XLSX.utils.book_append_sheet(wb, ws, "Cargo_Report");
+      XLSX.writeFile(wb, `barodar_cargo_${today}.xlsx`);
     }
 
     function saveToFile() {
       let txt = "BARODAR CARGO - Ҳисобот\n";
-      txt += `Нархи 1кг: ${document.getElementById('p-kg').value} | Нархи 1куб: ${document.getElementById('p-cub').value}\n`;
-      txt += "========================================\n";
-
       document.querySelectorAll('#tableBody tr').forEach((r, i) => {
-        const name = r.querySelector('.v-name').value || "-";
-        const kg = r.querySelector('.v-kg').value;
+        const n = r.querySelector('.v-name').value || "-", k = r.querySelector('.v-kg').value;
         const sum = r.querySelector('.r-total').innerText;
-        if (kg > 0 || sum > 0) {
-          txt += `${i + 1}. ${name} | Бор: ${kg}кг | Маблағ: ${sum}\n`;
-        }
+        if (k > 0) txt += `${i + 1}. ${n} | ${k}кг | ${sum} смн\n`;
       });
-
-      txt += "========================================\n";
-      txt += `ҶАМЪИ УМУМӢ: ${document.getElementById('t-total').innerText}\n`;
-      txt += `Сана: ${new Date().toLocaleString()}`;
-
       const blob = new Blob([txt], { type: "text/plain" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `cargo_calc_${new Date().getTime()}.txt`;
+      a.download = `cargo_${new Date().getTime()}.txt`;
       a.click();
     }
 
