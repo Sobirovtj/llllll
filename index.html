@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="tg">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barodar Cargo Calc</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 5px;
+      background-color: #f0f2f5;
+    }
+
+    .container {
+      background: white;
+      padding: 10px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      overflow-x: auto;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      font-size: 1.3rem;
+    }
+
+    .cargo-red {
+      color: #d93025;
+    }
+
+    /* Танзимоти нархҳо */
+    .price-settings {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #eef2f7;
+      border-radius: 8px;
+    }
+
+    .price-settings label {
+      font-weight: bold;
+      font-size: 13px;
+      color: #444;
+    }
+
+    .price-settings input {
+      width: 60px;
+      padding: 4px;
+      border: 2px solid #007bff;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1100px;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    th {
+      background-color: #f8f9fa;
+      font-weight: bold;
+    }
+
+    .yellow-bg {
+      background-color: #fff9c4 !important;
+    }
+
+    input {
+      width: 92%;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 5px;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    input:focus {
+      border-color: #d93025;
+      outline: none;
+      background-color: #fffde7;
+    }
+
+    .result-cell {
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .btn {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      color: white;
+      transition: 0.3s;
+    }
+
+    .btn-add {
+      background-color: #28a745;
+    }
+
+    .btn-save {
+      background-color: #007bff;
+    }
+
+    @media (max-width: 600px) {
+      .price-settings {
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+      }
+
+      th,
+      td {
+        padding: 4px;
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>BARODAR <span class="cargo-red">CARGO</span></h2>
+
+  <div class="price-settings">
+    <div>
+      <label>Нархи 1 КГ ($ ё смн): </label>
+      <input type="number" id="p-kg" value="25" oninput="calc()">
+    </div>
+    <div>
+      <label>Нархи 1 КУБ ($ ё смн): </label>
+      <input type="number" id="p-cub" value="450" oninput="calc()">
+    </div>
+  </div>
+
+  <div class="container">
+    <table id="cargoTable">
+      <thead>
+        <tr>
+          <th rowspan="3">№</th>
+          <th rowspan="3">АДРЕС</th>
+          <th rowspan="3">Ном</th>
+          <th rowspan="3">Тел</th>
+          <th colspan="2">Ҳамагӣ бор</th>
+          <th colspan="3">Обём (м)</th>
+          <th colspan="2">Ҳамагӣ</th>
+          <th rowspan="3" class="yellow-bg">Ҳосили куб маблағ</th>
+          <th rowspan="3" class="yellow-bg">Ҳамагӣ маблағ</th>
+        </tr>
+        <tr>
+          <th rowspan="2">Шумораи бор</th>
+          <th rowspan="2">кг</th>
+          <th>Дарози</th>
+          <th>Бар</th>
+          <th>Баланди</th>
+          <th rowspan="2">Ҳамагӣ Куб</th>
+          <th rowspan="2">Ҳосили кг</th>
+        </tr>
+        <tr>
+          <th>(м)</th>
+          <th>(м)</th>
+          <th>(м)</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+      <tfoot>
+        <tr style="background:#e9ecef; font-weight:bold;">
+          <td colspan="4" style="text-align:right">ҶАМЪБАСТ:</td>
+          <td id="t-count">0</td>
+          <td id="t-kg">0</td>
+          <td colspan="3">---</td>
+          <td id="t-cub">0.000</td>
+          <td id="t-kg-money">0</td>
+          <td id="t-cub-money" class="yellow-bg">0</td>
+          <td id="t-total" class="yellow-bg">0</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="btn-group">
+      <button class="btn btn-add" onclick="addRow()">+ Иловаи сатр</button>
+      <button class="btn btn-save" onclick="saveToFile()">💾 Захира кардан (.txt)</button>
+    </div>
+  </div>
+
+  <script>
+    let rowCount = 0;
+
+    function addRow() {
+      rowCount++;
+      const row = document.createElement('tr');
+      row.innerHTML = `
+                <td>${rowCount}</td>
+                <td><input type="text" class="v-addr" placeholder="Адрес"></td>
+                <td><input type="text" class="v-name" placeholder="Ном"></td>
+                <td><input type="text" class="v-tel" placeholder="Тел"></td>
+                <td><input type="number" class="v-cnt" value="0" oninput="calc()"></td>
+                <td><input type="number" class="v-kg" value="0" oninput="calc()"></td>
+                <td><input type="number" class="v-d" value="0" step="0.01" oninput="calc()"></td>
+                <td><input type="number" class="v-b" value="0" step="0.01" oninput="calc()"></td>
+                <td><input type="number" class="v-h" value="0" step="0.01" oninput="calc()"></td>
+                <td class="r-cub result-cell">0.000</td>
+                <td class="r-kg-s result-cell">0</td>
+                <td class="r-cub-s result-cell yellow-bg">0</td>
+                <td class="r-total result-cell yellow-bg">0</td>
+            `;
+      document.getElementById('tableBody').appendChild(row);
+    }
+
+    function calc() {
+      const priceKg = parseFloat(document.getElementById('p-kg').value) || 0;
+      const priceCub = parseFloat(document.getElementById('p-cub').value) || 0;
+
+      let tcnt = 0, tkg = 0, tcub = 0, tkgm = 0, tcubm = 0, tall = 0;
+      const rows = document.querySelectorAll('#tableBody tr');
+
+      rows.forEach(r => {
+        const cnt = +r.querySelector('.v-cnt').value || 0;
+        const kg = +r.querySelector('.v-kg').value || 0;
+        const d = +r.querySelector('.v-d').value || 0;
+        const b = +r.querySelector('.v-b').value || 0;
+        const h = +r.querySelector('.v-h').value || 0;
+
+        const cub = d * b * h;
+        const kgS = kg * priceKg;
+        const cubS = cub * priceCub;
+        const total = kgS + cubS;
+
+        r.querySelector('.r-cub').innerText = cub.toFixed(3);
+        r.querySelector('.r-kg-s').innerText = kgS.toFixed(1);
+        r.querySelector('.r-cub-s').innerText = cubS.toFixed(1);
+        r.querySelector('.r-total').innerText = total.toFixed(1);
+
+        tcnt += cnt; tkg += kg; tcub += cub; tkgm += kgS; tcubm += cubS; tall += total;
+      });
+
+      document.getElementById('t-count').innerText = tcnt;
+      document.getElementById('t-kg').innerText = tkg.toFixed(1);
+      document.getElementById('t-cub').innerText = tcub.toFixed(3);
+      document.getElementById('t-kg-money').innerText = tkgm.toFixed(1);
+      document.getElementById('t-cub-money').innerText = tcubm.toFixed(1);
+      document.getElementById('t-total').innerText = tall.toFixed(1);
+    }
+
+    function saveToFile() {
+      let txt = "BARODAR CARGO - Ҳисобот\n";
+      txt += `Нархи 1кг: ${document.getElementById('p-kg').value} | Нархи 1куб: ${document.getElementById('p-cub').value}\n`;
+      txt += "========================================\n";
+
+      document.querySelectorAll('#tableBody tr').forEach((r, i) => {
+        const name = r.querySelector('.v-name').value || "-";
+        const kg = r.querySelector('.v-kg').value;
+        const sum = r.querySelector('.r-total').innerText;
+        if (kg > 0 || sum > 0) {
+          txt += `${i + 1}. ${name} | Бор: ${kg}кг | Маблағ: ${sum}\n`;
+        }
+      });
+
+      txt += "========================================\n";
+      txt += `ҶАМЪИ УМУМӢ: ${document.getElementById('t-total').innerText}\n`;
+      txt += `Сана: ${new Date().toLocaleString()}`;
+
+      const blob = new Blob([txt], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `cargo_calc_${new Date().getTime()}.txt`;
+      a.click();
+    }
+
+    for (let i = 0; i < 5; i++) addRow();
+  </script>
+</body>
+
+</html>
